@@ -38,19 +38,26 @@ jobs:
           else echo "changed=true" >> "$GITHUB_OUTPUT"; echo "tag=$new" >> "$GITHUB_OUTPUT"; fi
 
       - name: Publish release
+        id: pub
         if: steps.cmp.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${{ steps.cmp.outputs.tag }}"
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then tag="$tag-$(date -u +%H%M)"; fi
+          gen=$(python3 -c "import json;print(json.load(open('out/manifest.json'))['generated_at'])")
           gh release create "$tag" out/manifest.json out/sig-md5.bin out/sig-sha1.bin out/sig-sha256.bin \
-            --repo "$GITHUB_REPOSITORY" --title "Signatures $tag" --notes "Automatic update. Upstream GPG signatures verified." --latest
+            --repo "$GITHUB_REPOSITORY" --title "Signatures $tag" \
+            --notes "Signature database $tag (data generated $gen). Upstream GPG signatures verified. Older releases are kept as history." --latest
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "gen=$gen" >> "$GITHUB_OUTPUT"
 
-      - name: Prune old releases (keep 20)
+      # Releases are never deleted: together with HISTORY.md they are the dated history of all databases.
+      - name: Add to HISTORY.md
         if: steps.cmp.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName,createdAt -q 'sort_by(.createdAt) | reverse | .[20:] | .[].tagName' \
-            | while read -r t; do [ -n "$t" ] && gh release delete "$t" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag; done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull -q --rebase
+          python3 tools/history_add.py signatures "${{ steps.pub.outputs.tag }}" "${{ steps.pub.outputs.tag }}" "3 Bloom filters" "${{ steps.pub.outputs.gen }}"
+          git add HISTORY.md && git commit -q -m "History: signatures ${{ steps.pub.outputs.tag }}" && git push

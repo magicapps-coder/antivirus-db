@@ -24,6 +24,8 @@ jobs:
         run: python3 tools/build_link_db.py links
 
       - name: Commit if changed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -34,4 +36,12 @@ jobs:
           fi
           v=$(python3 -c "import json;print(json.load(open('links/links-manifest.json'))['version'])")
           git commit -m "Link database $v"
+          # Dated copy as a release (not "latest": that one stays the signature database the app downloads).
+          tag="links-$v"
+          gen=$(python3 -c "import json;print(json.load(open('links/links-manifest.json'))['generated_at'])")
+          n=$(python3 -c "import json;m=json.load(open('links/links-manifest.json'));print(f\"{m['domain_count']:,} sites, {m['url_count']:,} links\")")
+          python3 tools/history_add.py links "$v" "$tag" "$n" "$gen"
+          git add HISTORY.md && git commit -q -m "History: links $v"
           git push
+          gh release create "$tag" links/link-domains.bin links/link-urls.bin links/links-manifest.json \
+            --repo "$GITHUB_REPOSITORY" --title "Links $v" --notes "Link database $v (generated $gen): $n." --latest=false

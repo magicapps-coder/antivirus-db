@@ -9,7 +9,7 @@ Databases for the Antivirus Cleaner app (`com.magic.apps.antivirus.cleaner`).
 - The app downloads `https://github.com/magicapps-coder/antivirus-db/releases/latest/download/manifest.json`
   and then the files listed in it (each checked by size and SHA-256).
 - `.github/workflows/update-db.yml` runs every 2 days: it fetches the upstream databases, verifies their GPG
-  signatures, renames them and publishes a release only when the files changed. It can also be started by hand
+  signatures, renames them and publishes a release only when the files changed. Old releases are kept. It can also be started by hand
   (Actions → Update signature database → Run workflow).
 
 ## Link database (`links/`)
@@ -19,6 +19,13 @@ Databases for the Antivirus Cleaner app (`com.magic.apps.antivirus.cleaner`).
   Phishing.Database (MIT).
 - `.github/workflows/update-links.yml` rebuilds it every day and commits only when the lists changed.
 - The app reads `https://raw.githubusercontent.com/magicapps-coder/antivirus-db/main/links/`.
+
+## History
+
+- [HISTORY.md](HISTORY.md): every published database with its date, version, size and a download link, newest first.
+- Signature releases are never deleted. Every changed link database is also published as a release `links-<version>`
+  (not marked "latest", so `releases/latest` always stays the newest signature database).
+- The app always takes the newest: signatures from `releases/latest`, links from `links/` on `main`.
 
 ## Safe packages
 
