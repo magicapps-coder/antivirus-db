@@ -27,6 +27,11 @@ Databases for the Antivirus Cleaner app (`com.magic.apps.antivirus.cleaner`).
   (not marked "latest", so `releases/latest` always stays the newest signature database).
 - The app always takes the newest: signatures from `releases/latest`, links from `links/` on `main`.
 
+## Keep alive
+
+`.github/workflows/keepalive.yml` commits `LAST_RUN.md` every Monday (time of the run and the last results of both
+update workflows). GitHub pauses scheduled workflows in public repos after 60 days without commits; this prevents it.
+
 ## Safe packages
 
 `safe_packages.json`: packages that are never reported as suspicious, read by the app from

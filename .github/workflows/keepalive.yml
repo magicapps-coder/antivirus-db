@@ -1,0 +1,44 @@
+name: Keep alive
+
+# GitHub disables scheduled workflows in public repos after 60 days without commits. This writes LAST_RUN.md once a
+# week (time of this run + the last runs of the database workflows) and commits it, so the schedules never stop.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write LAST_RUN.md
+        run: |
+          last() { gh run list --workflow "$1" --limit 1 --json createdAt,conclusion,status -q '.[0] | "\(.createdAt) \(.conclusion // .status)"' 2>/dev/null || echo "-"; }
+          {
+            echo "# Last run"
+            echo
+            echo "Updated weekly by the Keep alive workflow so GitHub never pauses the scheduled updates."
+            echo
+            echo "| What | Last run (UTC) | Result |"
+            echo "|---|---|---|"
+            echo "| Keep alive | $(date -u +%Y-%m-%dT%H:%M:%SZ) | running |"
+            for wf in update-db.yml update-links.yml; do
+              read -r when result <<< "$(last $wf)"
+              echo "| $wf | ${when:--} | ${result:--} |"
+            done
+          } > LAST_RUN.md
+          cat LAST_RUN.md
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add LAST_RUN.md
+          git commit -q -m "Keep alive $(date -u +%Y-%m-%d)"
+          git push
