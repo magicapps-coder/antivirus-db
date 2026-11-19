@@ -152,6 +152,9 @@ jobs:
           bad=[]
           if total < int(os.environ["MIN_TOTAL"]): bad.append(f"only {total} signatures")
           if max(fill) > 100: bad.append(f"filter over capacity: {fill}")
+          # MalwareBazaar is the largest SHA-256 source: without it the database is poorer than the last one.
+          mb=os.path.join(os.path.dirname(sys.argv[1]),'raw','malware_bazaar.sha256')
+          if not os.path.exists(mb) or os.path.getsize(mb) < 1_000_000: bad.append('MalwareBazaar missing (ABUSECH_AUTH_KEY?)')
           if bad: print("::error::"+"; ".join(bad), file=sys.stderr); sys.exit(1)
           PY
           last=$(gh release view --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[]|select(.name=="manifest.json").url' 2>/dev/null || true)
