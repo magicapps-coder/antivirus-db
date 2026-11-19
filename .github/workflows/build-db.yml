@@ -85,17 +85,18 @@ jobs:
         continue-on-error: true
         run: |
           test -n "$ABUSECH_AUTH_KEY" || { echo "::warning::ABUSECH_AUTH_KEY not set, MalwareBazaar skipped"; exit 1; }
-          curl -fsSL "https://mb-api.abuse.ch/v2/files/exports/$ABUSECH_AUTH_KEY/sha256_full.txt.zip" -o "$W/various/mb.zip"
-          unzip -q -o "$W/various/mb.zip" -d "$W/various/mb"
-          grep -hE '^[0-9a-f]{64}$' "$W"/various/mb/*.txt > "$W/raw/malware_bazaar.sha256"
+          curl -fsSL --retry 3 --retry-delay 20 "https://mb-api.abuse.ch/v2/files/exports/$ABUSECH_AUTH_KEY/sha256_full.txt.zip" -o "$W/various/mb.zip"
+          ls -la "$W/various/mb.zip"; unzip -l "$W/various/mb.zip"
+          unzip -p "$W/various/mb.zip" | tr -d '\r' | grep -oE '^[0-9a-f]{64}' > "$W/raw/malware_bazaar.sha256"
+          wc -l "$W/raw/malware_bazaar.sha256"
 
       - name: Source - ThreatFox (abuse.ch)
         continue-on-error: true
         run: |
           test -n "$ABUSECH_AUTH_KEY" || { echo "::warning::ABUSECH_AUTH_KEY not set, ThreatFox skipped"; exit 1; }
-          curl -fsSL "https://threatfox-api.abuse.ch/v2/files/exports/$ABUSECH_AUTH_KEY/sha256_full.csv.zip" -o "$W/various/tf.zip"
-          unzip -q -o "$W/various/tf.zip" -d "$W/various/tf"
-          grep -hoE '"[0-9a-f]{64}"' "$W"/various/tf/*.csv | tr -d '"' | sort -u > "$W/raw/threatfox.sha256"
+          curl -fsSL --retry 3 --retry-delay 20 "https://threatfox-api.abuse.ch/v2/files/exports/$ABUSECH_AUTH_KEY/sha256_full.csv.zip" -o "$W/various/tf.zip"
+          unzip -p "$W/various/tf.zip" | grep -oE '"[0-9a-f]{64}"' | tr -d '"' | sort -u > "$W/raw/threatfox.sha256"
+          wc -l "$W/raw/threatfox.sha256"
 
       - name: Source - Stalkerware indicators
         continue-on-error: true
@@ -131,6 +132,11 @@ jobs:
               if r[0].strip(): md5.write(f"{r[0].strip()}:0:{d}\n")
               if r[1].strip(): sha.write(f"{r[1].strip()}:0:{d}\n")
           PY
+
+      - name: Sources summary
+        if: always()
+        run: |
+          { echo "### Sources (lines per file)"; echo '```'; wc -l "$W"/raw/* 2>/dev/null | sort -n; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Generate Bloom filters
         run: |
