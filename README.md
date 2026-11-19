@@ -14,7 +14,7 @@ Databases for the Antivirus Cleaner app (`com.magic.apps.antivirus.cleaner`).
 ## Link database (`links/`)
 
 - `links/link-domains.bin`, `links/link-urls.bin`, `links/links-manifest.json`: dangerous sites and links for Web
-  protection and Link check, built by `tools/build_link_db.py` from URLhaus (malware-filter mirror, CC0) and
+  protection and Link check, built daily from URLhaus (malware-filter mirror, CC0) and
   Phishing.Database (MIT).
 - The app reads `https://raw.githubusercontent.com/magicapps-coder/antivirus-db/main/links/`.
 
