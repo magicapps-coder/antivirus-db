@@ -91,7 +91,7 @@ jobs:
         continue-on-error: true
         run: |
           test -n "$ABUSECH_AUTH_KEY" || { echo "::warning::ABUSECH_AUTH_KEY not set, ThreatFox skipped"; exit 1; }
-          curl -fsSL "https://threatfox-api.abuse.ch/v2/files/exports/$ABUSECH_AUTH_KEY/full_sha256.csv.zip" -o "$W/various/tf.zip"
+          curl -fsSL "https://threatfox-api.abuse.ch/v2/files/exports/$ABUSECH_AUTH_KEY/sha256_full.csv.zip" -o "$W/various/tf.zip"
           unzip -q -o "$W/various/tf.zip" -d "$W/various/tf"
           grep -hoE '"[0-9a-f]{64}"' "$W"/various/tf/*.csv | tr -d '"' | sort -u > "$W/raw/threatfox.sha256"
 
