@@ -8,9 +8,12 @@ Databases for the Antivirus Cleaner app (`com.magic.apps.antivirus.cleaner`).
   `sig-md5.bin`, `sig-sha1.bin`, `sig-sha256.bin`.
 - The app downloads `https://github.com/magicapps-coder/antivirus-db/releases/latest/download/manifest.json`
   and then the files listed in it (each checked by size and SHA-256).
-- `.github/workflows/update-db.yml` runs every 2 days: it fetches the upstream databases, verifies their GPG
-  signatures, renames them and publishes a release only when the files changed. Old releases are kept. It can also be started by hand
-  (Actions → Update signature database → Run workflow).
+- `.github/workflows/build-db.yml` builds the database every day from open sources (ClamAV, ESET, abuse.ch
+  MalwareBazaar and ThreatFox, Signature-Base, ThreatView, stalkerware indicators, Sanesecurity, targeted threats) with
+  the open-source Hypatia generator, checks it (minimum size, filter capacity, not much smaller than the last release)
+  and publishes a release. abuse.ch needs the free Auth-Key in the secret `ABUSECH_AUTH_KEY`. Started by hand
+  (Actions → Build signature database → Run workflow) it only builds, unless "Publish" is ticked.
+- `.github/workflows/update-db.yml` (manual only) mirrors the upstream Hypatia files, which stopped updating on 2026-09-27.
 
 ## Link database (`links/`)
 

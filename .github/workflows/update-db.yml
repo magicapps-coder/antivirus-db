@@ -2,8 +2,7 @@ name: Update signature database
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '30 2 */2 * *'
+  # Upstream stopped publishing on 2026-09-27; build-db.yml builds the database daily instead. Kept for manual use.
 
 permissions:
   contents: write
