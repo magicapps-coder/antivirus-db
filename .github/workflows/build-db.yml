@@ -33,7 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      W: ${{ github.workspace }}/work
+      W: /tmp/hdb          # outside the workspace: the ClamAV action cleans it
+      GEN: /tmp/hdb-gen
       ABUSECH_AUTH_KEY: ${{ secrets.ABUSECH_AUTH_KEY }}
     steps:
       - uses: actions/checkout@v4
@@ -42,9 +43,9 @@ jobs:
         run: |
           sudo apt-get update -y -qq
           sudo apt-get install -y -qq maven unzip dos2unix rsync
-          git clone -q "$GENERATOR_REPO" gen && git -C gen checkout -q "$GENERATOR_COMMIT"
+          git clone -q "$GENERATOR_REPO" "$GEN" && git -C "$GEN" checkout -q "$GENERATOR_COMMIT"
           mkdir -p "$W/raw" "$W/exclusions" "$W/various"
-          cp gen/static/* "$W/raw/"     # self-test canary hashes
+          cp "$GEN"/static/* "$W/raw/"     # self-test canary hashes
 
       - name: Start ClamAV
         uses: toblux/start-clamd-github-action@v0.2.1
@@ -133,7 +134,7 @@ jobs:
       - name: Generate Bloom filters
         run: |
           : > "$W/domains.txt"   # domain filter not used by the app
-          cd gen
+          cd "$GEN"
           mvn -q -B --no-transfer-progress clean compile exec:java \
             -Dexec.mainClass="org.maintainteam.hypatiadatabases.App" -Dexec.args="$W/raw/ $W/domains.txt" | tee "$W/report.txt"
 
