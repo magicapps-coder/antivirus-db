@@ -145,6 +145,19 @@ jobs:
           mvn -q -B --no-transfer-progress clean compile exec:java \
             -Dexec.mainClass="org.maintainteam.hypatiadatabases.App" -Dexec.args="$W/raw/ $W/domains.txt" | tee "$W/report.txt"
 
+      # The upstream database (last published 2026-09-27) accumulated ~4M MD5 signatures over the years that today's
+      # sources no longer list. Our release 2026.09.27 is that database: merge it in so nothing is lost.
+      - name: Merge the 2026.09.27 baseline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download 2026.09.27 --repo "$GITHUB_REPOSITORY" --pattern 'sig-*.bin' --dir "$W/base"
+          G=$(find ~/.m2/repository/com/google/guava/guava -name 'guava-*.jar' | head -1)
+          javac -cp "$G" -d "$W/merge" tools/MergeBloom.java
+          for t in md5 sha1 sha256; do
+            java -cp "$G:$W/merge" MergeBloom "$W/raw/hypatia-$t-bloom.bin" "$W/base/sig-$t.bin" "$W/merged-$t.bin" | tee -a "$W/merge.txt"
+          done
+
       - name: Check the result
         id: check
         env:
@@ -156,8 +169,11 @@ jobs:
           a=dict((k,int(v)) for k,v in re.findall(r'(md5|sha1|sha256): (\d+)', re.search(r'Added count:(.*)',t).group(1)))
           fill=[float(v) for k,v in re.findall(r'(md5|sha1|sha256): ([\d.E-]+)%', re.search(r'Fill amount:(.*)',t).group(1))]
           total=sum(a.values())
-          print(f"total={total}")
+          m=open(os.path.join(os.path.dirname(sys.argv[1]),'merge.txt')).read()
+          merged=sum(int(x) for x in re.findall(r'merged=(\d+)', m)); fpp=max(float(x) for x in re.findall(r'fpp=([\d.E-]+)', m))
+          print(f"total={merged}")
           bad=[]
+          if fpp > 1e-6: bad.append(f"false positive rate too high: {fpp}")
           if total < int(os.environ["MIN_TOTAL"]): bad.append(f"only {total} signatures")
           if max(fill) > 100: bad.append(f"filter over capacity: {fill}")
           # MalwareBazaar is the largest SHA-256 source: without it the database is poorer than the last one.
@@ -173,14 +189,14 @@ jobs:
             python3 -c "import sys;p=$prev;t=$total;r=float('$MIN_RATIO_VS_LAST');sys.exit(0 if p==0 or t>=p*r else 1)" \
               || { echo "::error::$total signatures vs $prev in the last release"; exit 1; }
           fi
-          { echo "### Signature database"; echo '```'; grep -E 'Added count|Fill amount|Expected false|exclusions' "$W/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo "### Signature database"; echo '```'; grep -E 'Added count|Fill amount|Expected false|exclusions' "$W/report.txt"; cat "$W/merge.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Package
         run: |
           mkdir -p out
-          cp "$W/raw/hypatia-md5-bloom.bin" out/sig-md5.bin
-          cp "$W/raw/hypatia-sha1-bloom.bin" out/sig-sha1.bin
-          cp "$W/raw/hypatia-sha256-bloom.bin" out/sig-sha256.bin
+          cp "$W/merged-md5.bin" out/sig-md5.bin
+          cp "$W/merged-sha1.bin" out/sig-sha1.bin
+          cp "$W/merged-sha256.bin" out/sig-sha256.bin
           gen=$(date -u +%Y-%m-%dT%H:%M:%SZ); ver=$(date -u +%Y.%m.%d)
           tools/make_manifest.sh out "$ver" "$gen" >/dev/null
           python3 - <<PY
