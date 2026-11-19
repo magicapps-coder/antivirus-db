@@ -37,6 +37,13 @@ jobs:
       GEN: /tmp/hdb-gen
       ABUSECH_AUTH_KEY: ${{ secrets.ABUSECH_AUTH_KEY }}
     steps:
+      # First: this action leaves the workspace empty, so the checkout comes after it.
+      - name: Start ClamAV
+        uses: toblux/start-clamd-github-action@v0.2.1
+        with:
+          db_main: true
+          db_daily: true
+
       - uses: actions/checkout@v4
 
       - name: Generator and dependencies
@@ -46,12 +53,6 @@ jobs:
           git clone -q "$GENERATOR_REPO" "$GEN" && git -C "$GEN" checkout -q "$GENERATOR_COMMIT"
           mkdir -p "$W/raw" "$W/exclusions" "$W/various"
           cp "$GEN"/static/* "$W/raw/"     # self-test canary hashes
-
-      - name: Start ClamAV
-        uses: toblux/start-clamd-github-action@v0.2.1
-        with:
-          db_main: true
-          db_daily: true
 
       - name: Source - ClamAV
         run: |
