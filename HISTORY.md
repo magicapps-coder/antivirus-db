@@ -5,6 +5,7 @@ signatures from `releases/latest`, links from `links/` on `main`. Older versions
 
 | Date (UTC) | Database | Version | Entries | Data generated | Download |
 |---|---|---|---|---|---|
+| 2026-11-21 04:07 | signatures | `2026.11.21` | 3 Bloom filters | 2026-11-21T04:07:44Z | [2026.11.21](https://github.com/magicapps-coder/antivirus-db/releases/tag/2026.11.21) |
 | 2026-11-21 04:01 | links | `2026.11.21.0401` | 393,959 sites, 109,327 links | 2026-11-21T04:01:54Z | [links-2026.11.21.0401](https://github.com/magicapps-coder/antivirus-db/releases/tag/links-2026.11.21.0401) |
 | 2026-11-20 04:15 | signatures | `2026.11.20` | 3 Bloom filters | 2026-11-20T04:15:14Z | [2026.11.20](https://github.com/magicapps-coder/antivirus-db/releases/tag/2026.11.20) |
 | 2026-11-20 04:04 | links | `2026.11.20.0404` | 393,917 sites, 108,617 links | 2026-11-20T04:04:22Z | [links-2026.11.20.0404](https://github.com/magicapps-coder/antivirus-db/releases/tag/links-2026.11.20.0404) |
